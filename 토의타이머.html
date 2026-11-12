@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>타임어택 토의하기</title>
+    <style>
+        /* 폰트 및 기본 설정 */
+        @font-face {
+            font-family: 'Hamchorom Batang';
+            src: local('Hamchorom Batang'), local('함초롬바탕');
+        }
+        body {
+            font-family: 'Hamchorom Batang', '함초롬바탕', serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            background-color: #FFF0F5; /* 연한 파스텔 핑크 */
+            color: #333;
+            overflow: hidden; /* 화면 스크롤 방지 */
+        }
+
+        /* 왼쪽 메뉴바 (사이드바) */
+        #sidebar {
+            width: 380px; 
+            background-color: #E6E6FA; /* 파스텔 연보라 */
+            padding: 30px 20px;
+            box-shadow: 2px 0 15px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start; 
+            overflow-y: auto;
+        }
+        #sidebar h2 {
+            text-align: center;
+            color: #6A5ACD;
+            font-size: 2.2rem; 
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-weight: 900;
+        }
+        .menu-item {
+            padding: 20px;
+            margin-bottom: 15px;
+            background-color: white;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1.4rem; 
+            font-weight: bold;
+            transition: all 0.2s;
+            border: 3px solid transparent;
+            box-shadow: 1px 1px 8px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+        .menu-item:hover {
+            background-color: #F8F8FF;
+            transform: scale(1.02);
+        }
+        .menu-item.active {
+            background-color: #FFFACD; /* 파스텔 노랑 */
+            border-color: #FFD700;
+            color: #B8860B;
+            transform: scale(1.03);
+            box-shadow: 2px 4px 10px rgba(255, 215, 0, 0.3);
+        }
+        .menu-group {
+            padding: 20px 10px 10px 10px;
+            font-size: 1.5rem; 
+            font-weight: 900;
+            color: #483D8B;
+            pointer-events: none;
+            text-align: center;
+        }
+        .sub-menu {
+            margin-left: 20px;
+            margin-right: 20px;
+            font-size: 1.25rem; 
+            padding: 15px;
+        }
+
+        /* 메인 컨텐츠 영역 */
+        #main {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly; 
+            align-items: center;
+            padding: 40px;
+            box-sizing: border-box;
+        }
+
+        /* 주제 입력 영역 */
+        .topic-container {
+            width: 100%;
+            max-width: 1100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #topic-input {
+            width: 100%;
+            font-family: inherit;
+            font-size: 3rem; 
+            font-weight: 900;
+            -webkit-text-stroke: 0.5px #333; 
+            text-align: center;
+            background-color: white;
+            border: 4px dashed #87CEFA; 
+            border-radius: 20px;
+            padding: 30px;
+            resize: none;
+            overflow: hidden;
+            min-height: 120px;
+            line-height: 1.5;
+            color: #222;
+            box-sizing: border-box;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        #topic-input:focus {
+            outline: none;
+            border-color: #FFB6C1;
+            background-color: #FFF;
+        }
+        
+        /* 완료 상태일 때의 디자인 */
+        #topic-input.completed {
+            border-color: transparent;
+            background-color: transparent;
+            box-shadow: none;
+            color: #000;
+            -webkit-text-stroke: 1.5px #000; 
+            text-shadow: 2px 4px 10px rgba(0,0,0,0.2); 
+            transform: scale(1.05); 
+            cursor: default;
+        }
+
+        .topic-buttons {
+            margin-top: 15px;
+            display: flex;
+            gap: 15px;
+        }
+        .btn-small {
+            padding: 10px 25px;
+            font-size: 1.3rem; 
+            font-family: inherit;
+            background-color: #E0FFFF;
+            border: 2px solid #AFEEEE;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        .btn-small:hover { background-color: #AFEEEE; }
+        .btn-complete { background-color: #FFFACD; border-color: #F0E68C; }
+        .btn-complete:hover { background-color: #F0E68C; }
+
+        /* 타이머 영역 */
+        .timer-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #current-step-title {
+            font-size: 3.5rem; 
+            font-weight: 900;
+            color: #4682B4;
+            margin-bottom: 20px;
+        }
+        
+        /* 타이머와 양옆 시간 조절 버튼을 감싸는 영역 */
+        .timer-display-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 40px; /* 버튼과 숫자 사이 간격 */
+        }
+
+        /* 1분 추가/감소 버튼 */
+        .btn-time-adj {
+            background-color: #FFDAB9; /* 파스텔 피치 */
+            color: #D2691E;
+            border: 3px solid #FFA07A;
+            border-radius: 20px;
+            padding: 15px 20px;
+            font-size: 1.8rem;
+            font-weight: bold;
+            font-family: inherit;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: all 0.1s;
+        }
+        .btn-time-adj:active {
+            transform: translateY(3px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .btn-time-adj:hover {
+            background-color: #FFA07A;
+            color: #FFF;
+        }
+
+        #timer-display {
+            font-size: 15rem; 
+            font-weight: bold;
+            color: #333;
+            line-height: 1;
+            margin: 0;
+            text-shadow: 5px 5px 10px rgba(0,0,0,0.1);
+            transition: color 0.3s;
+            width: 550px; /* 시간 텍스트 너비 고정으로 흔들림 방지 */
+            text-align: center;
+        }
+        .timer-warning { color: #FFA500 !important; animation: pulse 1s infinite; }
+        .timer-danger { color: #FF4500 !important; animation: pulse 0.5s infinite; }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* 하단 컨트롤 버튼 */
+        .controls {
+            display: flex;
+            gap: 40px; 
+        }
+        .btn {
+            padding: 20px 50px;
+            font-size: 2rem; 
+            font-family: inherit;
+            font-weight: bold;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            transition: transform 0.1s;
+        }
+        .btn:active { transform: translateY(4px); box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+        #btn-prev { background-color: #FFE4E1; color: #CD5C5C; }
+        #btn-start { background-color: #98FB98; color: #006400; }
+        #btn-next { background-color: #87CEFA; color: #00008B; }
+
+        /* 커스텀 휴식 모달 (10초 대기) */
+        #rest-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: #FFF;
+            padding: 60px;
+            border-radius: 30px;
+            text-align: center;
+            border: 8px solid #FFB6C1;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .modal-content h2 { font-size: 3.5rem; margin-top: 0; color: #FF69B4; }
+        .modal-content p { font-size: 2rem; font-weight: bold; }
+        #rest-timer { font-size: 8rem; font-weight: bold; color: #333; margin: 30px 0; }
+        #btn-skip-rest {
+            background-color: #FFB6C1; color: white; border: none;
+            padding: 15px 30px; font-size: 2rem; font-family: inherit;
+            font-weight: bold; border-radius: 15px; cursor: pointer;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+        }
+        #btn-skip-rest:active { transform: translateY(3px); }
+    </style>
+</head>
+<body>
+
+    <!-- 왼쪽 단계 메뉴바 -->
+    <div id="sidebar">
+        <h2>토의 진행 순서</h2>
+        <div class="menu-item" onclick="goToStep(0)" id="menu-0">1. 토의주제 정하기 (3분)</div>
+        <div class="menu-item" onclick="goToStep(1)" id="menu-1">2. 의견마련하기 (3분)</div>
+        <div class="menu-item" onclick="goToStep(2)" id="menu-2">3. 의견 나누기 (5분)</div>
+        
+        <!-- 그룹 헤더 (클릭 불가) -->
+        <div class="menu-group">4. 의견 모으기 (총 13분)</div>
+        <div class="menu-item sub-menu" onclick="goToStep(3)" id="menu-3">1) 검토 기준 마련 (3분)</div>
+        <div class="menu-item sub-menu" onclick="goToStep(4)" id="menu-4">2) 장점과 단점 검토 (3분)</div>
+        <div class="menu-item sub-menu" onclick="goToStep(5)" id="menu-5">3) 합의점 찾기 (5분)</div>
+        
+        <div class="menu-item" onclick="goToStep(6)" id="menu-6" style="margin-bottom: 0;">5. 의견결정하기 (3분)</div>
+    </div>
+
+    <!-- 메인 컨텐츠 -->
+    <div id="main">
+        <!-- 주제 입력칸 -->
+        <div class="topic-container">
+            <textarea id="topic-input" placeholder="이곳에 토의 주제를 입력하세요..." rows="1"></textarea>
+            <div class="topic-buttons">
+                <button class="btn-small btn-complete" onclick="completeTopic()">완료</button>
+                <button class="btn-small" onclick="focusTopic()">수정하기</button>
+                <button class="btn-small" onclick="clearTopic()">새로 쓰기</button>
+            </div>
+        </div>
+
+        <div class="timer-wrapper">
+            <div id="current-step-title">1. 토의주제 정하기</div>
+            <!-- 타이머 및 시간 조절 버튼 컨테이너 -->
+            <div class="timer-display-container">
+                <button class="btn-time-adj" onclick="adjustTime(-60)">- 1분</button>
+                <div id="timer-display">03:00</div>
+                <button class="btn-time-adj" onclick="adjustTime(60)">+ 1분</button>
+            </div>
+        </div>
+
+        <!-- 컨트롤 버튼 -->
+        <div class="controls">
+            <button id="btn-prev" class="btn" onclick="prevStep()">이전 단계</button>
+            <button id="btn-start" class="btn" onclick="toggleTimer()">시작</button>
+            <button id="btn-next" class="btn" onclick="nextStep(true)">다음 단계</button>
+        </div>
+    </div>
+
+    <!-- 10초 대기 모달 -->
+    <div id="rest-modal">
+        <div class="modal-content">
+            <h2>🔔 시간 종료!</h2>
+            <p>다음 단계로 넘어가기 전 대기 시간입니다.</p>
+            <div id="rest-timer">10</div>
+            <button id="btn-skip-rest" onclick="skipRest()">바로 다음 단계 시작</button>
+        </div>
+    </div>
+
+    <script>
+        // 토의 단계 및 시간 (초 단위) 설정
+        const steps = [
+            { title: "1. 토의주제 정하기", time: 180 },
+            { title: "2. 의견마련하기", time: 180 },
+            { title: "3. 의견 나누기 (의견과 이유 발표)", time: 300 },
+            { title: "4-1. 검토 기준 마련", time: 180 },
+            { title: "4-2. 의견의 장점과 단점 검토", time: 180 },
+            { title: "4-3. 합의점 찾기", time: 300 },
+            { title: "5. 의견결정하기", time: 180 }
+        ];
+
+        let currentStep = 0;
+        let timeLeft = steps[0].time;
+        let timerInterval = null;
+        let isRunning = false;
+
+        let restInterval = null;
+        let restTimeLeft = 10;
+
+        // UI 요소
+        const timerDisplay = document.getElementById('timer-display');
+        const titleDisplay = document.getElementById('current-step-title');
+        const btnStart = document.getElementById('btn-start');
+        const topicInput = document.getElementById('topic-input');
+        const restModal = document.getElementById('rest-modal');
+        const restTimerDisplay = document.getElementById('rest-timer');
+
+        // 텍스트에어리어 자동 높이 조절
+        topicInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+
+        // 주제 칸 버튼 기능들
+        function completeTopic() {
+            if(topicInput.value.trim() !== "") {
+                topicInput.readOnly = true;
+                topicInput.classList.add('completed');
+            }
+        }
+        function focusTopic() { 
+            topicInput.readOnly = false;
+            topicInput.classList.remove('completed');
+            topicInput.focus(); 
+        }
+        function clearTopic() { 
+            topicInput.readOnly = false;
+            topicInput.classList.remove('completed');
+            topicInput.value = ''; 
+            topicInput.style.height = '120px'; // 기본 높이로 복구
+            topicInput.focus(); 
+        }
+
+        // Web Audio API 사운드
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function initAudio() {
+            if (audioCtx.state === 'suspended') { audioCtx.resume(); }
+        }
+
+        function playTick() {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        function playBuzzer() {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 1);
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.5);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 1.5);
+        }
+
+        function updateDisplay() {
+            let m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            let s = (timeLeft % 60).toString().padStart(2, '0');
+            timerDisplay.innerText = `${m}:${s}`;
+
+            if (timeLeft <= 10 && timeLeft > 0) {
+                timerDisplay.className = 'timer-danger';
+            } else if (timeLeft <= 60 && timeLeft > 0) {
+                timerDisplay.className = 'timer-warning';
+            } else {
+                timerDisplay.className = '';
+            }
+
+            for(let i=0; i<steps.length; i++) {
+                document.getElementById('menu-' + i).classList.remove('active');
+            }
+            document.getElementById('menu-' + currentStep).classList.add('active');
+        }
+
+        // 수동 시간 조절 함수 (-1분, +1분)
+        function adjustTime(seconds) {
+            timeLeft += seconds;
+            if (timeLeft < 0) {
+                timeLeft = 0; // 시간이 0 이하로 내려가지 않도록 방지
+            }
+            updateDisplay();
+        }
+
+        function toggleTimer() {
+            initAudio();
+            if (isRunning) {
+                clearInterval(timerInterval);
+                btnStart.innerText = "계속";
+                btnStart.style.backgroundColor = "#FFD700";
+            } else {
+                timerInterval = setInterval(countdown, 1000);
+                btnStart.innerText = "일시정지";
+                btnStart.style.backgroundColor = "#FFA07A";
+            }
+            isRunning = !isRunning;
+        }
+
+        function countdown() {
+            if (timeLeft > 0) {
+                timeLeft--;
+                updateDisplay();
+                if (timeLeft <= 5 && timeLeft > 0) { playTick(); }
+                if (timeLeft === 0) {
+                    clearInterval(timerInterval);
+                    isRunning = false;
+                    btnStart.innerText = "시작";
+                    btnStart.style.backgroundColor = "#98FB98";
+                    playBuzzer();
+                    showRestModal();
+                }
+            }
+        }
+
+        function showRestModal() {
+            restModal.style.display = 'flex';
+            restTimeLeft = 10;
+            restTimerDisplay.innerText = restTimeLeft;
+            
+            restInterval = setInterval(() => {
+                restTimeLeft--;
+                restTimerDisplay.innerText = restTimeLeft;
+                if(restTimeLeft <= 3 && restTimeLeft > 0) { playTick(); }
+                if(restTimeLeft <= 0) {
+                    clearInterval(restInterval);
+                    skipRest();
+                }
+            }, 1000);
+        }
+
+        function skipRest() {
+            clearInterval(restInterval);
+            restModal.style.display = 'none';
+            nextStep(false);
+        }
+
+        function loadStep() {
+            titleDisplay.innerText = steps[currentStep].title;
+            timeLeft = steps[currentStep].time;
+            updateDisplay();
+        }
+
+        function prevStep() {
+            initAudio();
+            if (currentStep > 0) {
+                currentStep--;
+                clearInterval(timerInterval);
+                isRunning = false;
+                btnStart.innerText = "시작";
+                btnStart.style.backgroundColor = "#98FB98";
+                loadStep();
+            }
+        }
+
+        function nextStep(forceStart = true) {
+            initAudio();
+            if (currentStep < steps.length - 1) {
+                currentStep++;
+                clearInterval(timerInterval);
+                isRunning = false;
+                btnStart.innerText = "시작";
+                btnStart.style.backgroundColor = "#98FB98";
+                loadStep();
+                if(forceStart) { toggleTimer(); }
+            } else {
+                alert("모든 토의 단계가 완료되었습니다!");
+            }
+        }
+
+        function goToStep(index) {
+            initAudio();
+            currentStep = index;
+            clearInterval(timerInterval);
+            isRunning = false;
+            btnStart.innerText = "시작";
+            btnStart.style.backgroundColor = "#98FB98";
+            loadStep();
+        }
+
+        loadStep();
+    </script>
+</body>
+</html>
